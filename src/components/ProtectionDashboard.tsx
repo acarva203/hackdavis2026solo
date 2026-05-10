@@ -289,7 +289,7 @@ export function ProtectionDashboard() {
               <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-base">Accountability Ledger</CardTitle>
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-[oklch(var(--success))]" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--success)]" />
                   live
                 </span>
               </CardHeader>
@@ -388,9 +388,9 @@ function Kpi({
     tone === "primary"
       ? "bg-primary/10 text-primary"
       : tone === "warning"
-        ? "bg-[oklch(var(--warning)/0.15)] text-[oklch(var(--warning))]"
+        ? "bg-[color-mix(in oklab, var(--warning) 15%, transparent)] text-[var(--warning)]"
         : tone === "success"
-          ? "bg-[oklch(var(--success)/0.15)] text-[oklch(var(--success))]"
+          ? "bg-[color-mix(in oklab, var(--success) 15%, transparent)] text-[var(--success)]"
           : "bg-muted text-muted-foreground";
   return (
     <Card className="shadow-[var(--shadow-card)]">
@@ -462,7 +462,7 @@ function ProgressStep({
         {icon}
       </span>
       <span className={`text-sm ${done ? "font-medium text-foreground" : "text-muted-foreground"}`}>{label}</span>
-      {done && <BadgeCheck className="ml-auto h-4 w-4 text-[oklch(var(--success))]" />}
+      {done && <BadgeCheck className="ml-auto h-4 w-4 text-[var(--success)]" />}
     </div>
   );
 }
@@ -479,9 +479,9 @@ function MemoryRow({ label, value }: { label: string; value: string }) {
 function StatusPill({ label, tone }: { label: string; tone: "amber" | "green" | "neutral" }) {
   const toneClass =
     tone === "green"
-      ? "border-[oklch(var(--success)/0.3)] bg-[oklch(var(--success)/0.12)] text-[oklch(var(--success))]"
+      ? "border-[color-mix(in oklab, var(--success) 30%, transparent)] bg-[color-mix(in oklab, var(--success) 12%, transparent)] text-[var(--success)]"
       : tone === "amber"
-        ? "border-[oklch(var(--warning)/0.3)] bg-[oklch(var(--warning)/0.12)] text-[oklch(0.45_0.12_75)]"
+        ? "border-[color-mix(in oklab, var(--warning) 30%, transparent)] bg-[color-mix(in oklab, var(--warning) 12%, transparent)] text-[oklch(0.45 0.12 75)]"
         : "border-border bg-muted text-muted-foreground";
   return (
     <span
