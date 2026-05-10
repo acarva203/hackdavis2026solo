@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as LedgerRouteImport } from './routes/ledger'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LedgerRoute = LedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IncidentsRoute = IncidentsRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
+  '/ledger': typeof LedgerRoute
   '/reports': typeof ReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
+  '/ledger': typeof LedgerRoute
   '/reports': typeof ReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/incidents': typeof IncidentsRoute
+  '/ledger': typeof LedgerRoute
   '/reports': typeof ReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/incidents' | '/reports'
+  fullPaths: '/' | '/incidents' | '/ledger' | '/reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/incidents' | '/reports'
-  id: '__root__' | '/' | '/incidents' | '/reports'
+  to: '/' | '/incidents' | '/ledger' | '/reports'
+  id: '__root__' | '/' | '/incidents' | '/ledger' | '/reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   IncidentsRoute: typeof IncidentsRoute
+  LedgerRoute: typeof LedgerRoute
   ReportsRoute: typeof ReportsRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ledger': {
+      id: '/ledger'
+      path: '/ledger'
+      fullPath: '/ledger'
+      preLoaderRoute: typeof LedgerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/incidents': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   IncidentsRoute: IncidentsRoute,
+  LedgerRoute: LedgerRoute,
   ReportsRoute: ReportsRoute,
 }
 export const routeTree = rootRouteImport
