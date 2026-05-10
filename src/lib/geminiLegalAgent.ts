@@ -1,8 +1,23 @@
+import { advocacyReportSchema, detectionDataSchema } from "@/lib/advocacySchemas";
 import { AdvocacyReport, DetectionData } from "@/types";
 import { sha256Hex } from "./hash";
 
 export async function generateAdvocacyReport(detection: DetectionData): Promise<AdvocacyReport> {
-  await new Promise((r) => setTimeout(r, 900));
+  try {
+    detectionDataSchema.parse(detection);
+    const response = await fetch("/api/generate-advocacy-report", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(detection),
+    });
+    if (!response.ok) {
+      throw new Error(`Gemini backend returned ${response.status}`);
+    }
+    const parsed = advocacyReportSchema.parse(await response.json());
+    return parsed;
+  } catch (error) {
+    console.warn("Falling back to local advocacy report", error);
+  }
 
   const victimRightsSummary = `You are not alone, ${detection.survivorAlias}. A synthetic media incident has been detected on ${detection.platform} with ${Math.round(
     detection.confidence * 100

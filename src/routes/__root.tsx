@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { SolanaWalletProvider } from "@/components/SolanaWalletProvider";
 
 function NotFoundComponent() {
   return (
@@ -115,18 +116,20 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="md:hidden flex items-center gap-2 border-b border-border bg-card px-4 py-2">
-              <SidebarTrigger />
-              <span className="text-sm font-semibold">Aegis</span>
+      <SolanaWalletProvider>
+        <SidebarProvider>
+          <div className="flex min-h-screen w-full bg-background">
+            <AppSidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="md:hidden flex items-center gap-2 border-b border-border bg-card px-4 py-2">
+                <SidebarTrigger />
+                <span className="text-sm font-semibold">Aegis</span>
+              </div>
+              <Outlet />
             </div>
-            <Outlet />
           </div>
-        </div>
-      </SidebarProvider>
+        </SidebarProvider>
+      </SolanaWalletProvider>
     </QueryClientProvider>
   );
 }
