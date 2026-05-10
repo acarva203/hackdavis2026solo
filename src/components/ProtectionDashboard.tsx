@@ -16,10 +16,12 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useSurvivorHistory } from "@/hooks/useUserSafetyContext";
 import { generateAdvocacyReport } from "@/lib/geminiLegalAgent";
 import { sha256Hex } from "@/lib/hash";
-import { registerHarmSignature } from "@/lib/justiceLedger";
+import { LedgerRegistrationError, registerHarmSignature } from "@/lib/justiceLedger";
 import type { AdvocacyReport, DetectionData, JusticeLedgerEntry } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +53,7 @@ const placeholderDetection: DetectionData = {
 type WorkflowState = "idle" | "reporting" | "logging" | "sent";
 
 export function ProtectionDashboard() {
+  const wallet = useWallet();
   const { history, memoryStatus, targetedCampaignScore, addIncident, updateIncident } =
     useSurvivorHistory();
   const [report, setReport] = useState<AdvocacyReport | null>(null);
@@ -61,39 +64,67 @@ export function ProtectionDashboard() {
   const currentIncidentId = useMemo(() => `inc-${placeholderDetection.id}`, []);
   const isWorking = workflowState === "reporting" || workflowState === "logging";
   const latestLedger = ledgerEntries[0];
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE !== "false";
 
   async function runOneClickTakedown() {
-    setWorkflowState("reporting");
-    setPlatformStatus("Drafting survivor-centered escalation");
-    addIncident({
-      id: currentIncidentId,
-      date: placeholderDetection.detectedAt,
-      platform: placeholderDetection.platform,
-      sourceUrl: placeholderDetection.sourceUrl,
-      status: "detected",
-    });
+    try {
+      setWorkflowState("reporting");
+      setPlatformStatus("Drafting survivor-centered escalation");
+      addIncident({
+        id: currentIncidentId,
+        date: placeholderDetection.detectedAt,
+        platform: placeholderDetection.platform,
+        sourceUrl: placeholderDetection.sourceUrl,
+        status: "detected",
+      });
 
-    const advocacyReport = await generateAdvocacyReport(placeholderDetection);
-    setReport(advocacyReport);
-    updateIncident(currentIncidentId, {
-      status: "notice_generated",
-      harmCategory: advocacyReport.harmCategory,
-      reportHash: advocacyReport.reportHash,
-    });
+      const advocacyReport = await generateAdvocacyReport(placeholderDetection);
+      setReport(advocacyReport);
+      updateIncident(currentIncidentId, {
+        status: "notice_generated",
+        harmCategory: advocacyReport.harmCategory,
+        reportHash: advocacyReport.reportHash,
+      });
 
-    setWorkflowState("logging");
-    setPlatformStatus("Registering hash-only proof of existence");
-    const contentHash = await sha256Hex(placeholderDetection.metadata.perceptualHash);
-    const ledgerEntry = await registerHarmSignature(contentHash);
-    setLedgerEntries((entries) => [ledgerEntry, ...entries]);
-    updateIncident(currentIncidentId, {
-      status: "ledger_logged",
-      contentHash,
-      transactionSignature: ledgerEntry.signature,
-    });
+      setWorkflowState("logging");
+      setPlatformStatus("Registering hash-only proof of existence");
+      const contentHash = await sha256Hex(placeholderDetection.metadata.perceptualHash);
+      const ledgerEntry = await registerHarmSignature(
+        contentHash,
+        isDemoMode
+          ? { mode: "demo" }
+          : { mode: "live", wallet: { publicKey: wallet.publicKey, sendTransaction: wallet.sendTransaction } },
+      );
+      setLedgerEntries((entries) => [ledgerEntry, ...entries]);
+      updateIncident(currentIncidentId, {
+        status: "ledger_logged",
+        contentHash,
+        transactionSignature: ledgerEntry.signature,
+      });
 
-    setWorkflowState("sent");
-    setPlatformStatus("Escalation package prepared");
+      setWorkflowState("sent");
+      setPlatformStatus(
+        isDemoMode
+          ? "Escalation package prepared (demo ledger mode)"
+          : "Escalation package prepared",
+      );
+    } catch (error) {
+      setWorkflowState("idle");
+      if (error instanceof LedgerRegistrationError) {
+        if (error.code === "wallet_not_connected") {
+          setPlatformStatus("Wallet not connected");
+          return;
+        }
+        if (error.code === "signature_rejected") {
+          setPlatformStatus("Wallet signature rejected");
+          return;
+        }
+        setPlatformStatus("Solana RPC failed");
+        return;
+      }
+      setPlatformStatus("Workflow failed - please retry");
+      console.error(error);
+    }
   }
 
   return (
@@ -108,6 +139,7 @@ export function ProtectionDashboard() {
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {!isDemoMode && <WalletMultiButton className="!h-9 !rounded-md !text-sm !font-medium" />}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-4 w-4" />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
@@ -290,7 +322,7 @@ export function ProtectionDashboard() {
                 <CardTitle className="text-base">Accountability Ledger</CardTitle>
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--success)]" />
-                  live
+                  {isDemoMode ? "demo mode" : "live"}
                 </span>
               </CardHeader>
               <CardContent className="space-y-3">
